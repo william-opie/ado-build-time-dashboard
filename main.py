@@ -1,6 +1,7 @@
 import os
 import math
 from datetime import datetime, timedelta
+from fnmatch import fnmatch
 from typing import Optional, List, Dict, Any
 
 import requests
@@ -57,6 +58,19 @@ def azdo_auth_header() -> Dict[str, str]:
     return {"Authorization": f"Basic {b64}"}
 
 
+def normalize_branch(branch: str) -> str:
+    branch = branch.strip()
+    if not branch:
+        return branch
+    if branch.startswith("refs/"):
+        return branch
+    return f"refs/heads/{branch}"
+
+
+def branch_has_wildcard(branch: str) -> bool:
+    return any(symbol in branch for symbol in ("*", "?", "[", "]"))
+
+
 def fetch_builds(
     branch: Optional[str],
     days: int,
@@ -70,16 +84,15 @@ def fetch_builds(
 
     params = {
         "api-version": "7.1-preview.7",
+        # queueTimeDescending cannot be combined with statusFilter=completed; use
+        # finishTimeDescending so we still get the most recent completed builds.
         "statusFilter": "completed",
-        "queryOrder": "queueTimeDescending",
+        "queryOrder": "finishTimeDescending",
         "top": top,
         "minTime": min_time.isoformat() + "Z",
     }
 
-    # Normalize branch name: allow 'main' or 'refs/heads/main'
     if branch:
-        if not branch.startswith("refs/"):
-            branch = f"refs/heads/{branch}"
         params["branchName"] = branch
 
     headers = {
@@ -87,7 +100,10 @@ def fetch_builds(
         **azdo_auth_header(),
     }
 
-    resp = requests.get(url, headers=headers, params=params, timeout=30)
+    try:
+        resp = requests.get(url, headers=headers, params=params, timeout=30)
+    except requests.exceptions.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to reach Azure DevOps: {exc}") from exc
     if resp.status_code != 200:
         raise HTTPException(
             status_code=resp.status_code,
@@ -95,6 +111,12 @@ def fetch_builds(
         )
 
     return resp.json()
+
+
+def strip_refs_heads(branch: Optional[str]) -> Optional[str]:
+    if branch and branch.startswith("refs/heads/"):
+        return branch[len("refs/heads/"):]
+    return branch
 
 
 def transform_builds(raw: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -124,6 +146,7 @@ def transform_builds(raw: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "buildNumber": b.get("buildNumber"),
                 "pipelineName": (b.get("definition") or {}).get("name"),
                 "sourceBranch": b.get("sourceBranch"),
+                "sourceBranchDisplay": strip_refs_heads(b.get("sourceBranch")),
                 "result": b.get("result"),
                 "status": b.get("status"),
                 "startTime": b.get("startTime"),
@@ -247,6 +270,14 @@ def index():
     .nowrap {
       white-space: nowrap;
     }
+    .error-banner {
+      margin-top: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      background: #fee2e2;
+      color: #991b1b;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -254,8 +285,8 @@ def index():
   <div class="card">
     <div class="filters">
       <div class="field">
-        <label for="branchInput">Branch (e.g. <code>main</code> or <code>refs/heads/main</code>)</label>
-        <input id="branchInput" type="text" placeholder="refs/heads/main (blank = all branches)" />
+        <label for="branchInput">Branch (supports wildcards, e.g. <code>release/*</code>)</label>
+        <input id="branchInput" type="text" placeholder="main, refs/heads/main, release/* (blank = all)" />
       </div>
       <div class="field">
         <label for="daysInput">Lookback (days)</label>
@@ -283,6 +314,7 @@ def index():
       </div>
     </div>
     <div class="summary" id="summary"></div>
+    <div class="error-banner" id="errorBanner"></div>
   </div>
 
   <div class="card">
@@ -363,7 +395,8 @@ function renderTable() {
     tr.appendChild(pipelineTd);
 
     const branchTd = document.createElement("td");
-    branchTd.textContent = b.sourceBranch || "";
+    const displayedBranch = b.sourceBranchDisplay || b.sourceBranch || "";
+    branchTd.textContent = displayedBranch;
     tr.appendChild(branchTd);
 
     const buildNumTd = document.createElement("td");
@@ -410,8 +443,13 @@ function renderTable() {
 
 async function loadBuilds() {
   const branch = document.getElementById("branchInput").value.trim();
-  const days = parseInt(document.getElementById("daysInput").value, 10) || 7;
-  const top = parseInt(document.getElementById("topInput").value, 10) || 200;
+  const daysInput = parseInt(document.getElementById("daysInput").value, 10) || 7;
+  const topInput = parseInt(document.getElementById("topInput").value, 10) || 200;
+  const days = Math.min(365, Math.max(1, daysInput));
+  const top = Math.min(1000, Math.max(1, topInput));
+  const errorBanner = document.getElementById("errorBanner");
+  errorBanner.style.display = "none";
+  errorBanner.textContent = "";
 
   const btn = document.getElementById("loadButton");
   btn.disabled = true;
@@ -428,7 +466,8 @@ async function loadBuilds() {
     const res = await fetch(`/api/builds?${params.toString()}`);
     if (!res.ok) {
       const text = await res.text();
-      alert("Error loading builds: " + text);
+      errorBanner.textContent = "Error loading builds: " + text;
+      errorBanner.style.display = "block";
       return;
     }
     const data = await res.json();
@@ -438,7 +477,8 @@ async function loadBuilds() {
     summary.textContent = `Fetched ${currentBuilds.length} builds from Azure DevOps (branch filter: ${data.branch || "all"}, lookback: ${data.days} days).`;
   } catch (e) {
     console.error(e);
-    alert("Error loading builds. See console for details.");
+    errorBanner.textContent = "Unexpected error loading builds. Check the browser console for details.";
+    errorBanner.style.display = "block";
   } finally {
     btn.disabled = false;
     btn.textContent = "Load builds";
@@ -464,8 +504,19 @@ def get_builds(
     """
     Fetch completed builds from Azure DevOps, optionally filtered by branch and time window.
     """
-    raw = fetch_builds(branch=branch, days=days, top=top)
+    branch_for_api = None
+    wildcard_pattern = None
+    if branch:
+        normalized = normalize_branch(branch)
+        if branch_has_wildcard(branch):
+            wildcard_pattern = normalized
+        else:
+            branch_for_api = normalized
+
+    raw = fetch_builds(branch=branch_for_api, days=days, top=top)
     builds = transform_builds(raw)
+    if wildcard_pattern:
+        builds = [b for b in builds if fnmatch(b.get("sourceBranch") or "", wildcard_pattern)]
     return JSONResponse(
         {
             "branch": branch,
