@@ -70,8 +70,10 @@ def fetch_builds(
 
     params = {
         "api-version": "7.1-preview.7",
+        # queueTimeDescending cannot be combined with statusFilter=completed; use
+        # finishTimeDescending so we still get the most recent completed builds.
         "statusFilter": "completed",
-        "queryOrder": "queueTimeDescending",
+        "queryOrder": "finishTimeDescending",
         "top": top,
         "minTime": min_time.isoformat() + "Z",
     }
