@@ -1,3 +1,14 @@
+# ADO Build Time Dashboard
+
+This web application visualizes Azure DevOps pipeline duration trends so teams can quickly spot regressions, slow builds, and outliers without combing through multiple Azure DevOps pages. By combining pipeline metadata with intuitive filtering, it becomes easy to identify the longest-running builds, compare branches, and monitor optimizations over time.
+
+### Key Features
+- **Configurable dashboard:** Filter by branch, pipeline, and date range to tailor the dataset to your investigation.
+- **Duration insights:** Sort builds by runtime and compare branches to highlight regressions or improvements.
+- **Branch wildcards:** Use wildcard patterns (for example, `release/*`) to focus on groups of related branches.
+- **Inline error reporting:** When API requests fail, inline banners surface the issue immediately without blocking alerts.
+- **Input validation:** The UI clamps user-provided values to safe ranges so the backend never receives unsupported queries.
+
 # Quick Start
 
 Build:
