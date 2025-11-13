@@ -1,4 +1,5 @@
 # ADO Build Time Dashboard
+<img width="1679" height="563" alt="Screenshot 2025-11-13 115658" src="https://github.com/user-attachments/assets/af656dcc-10dc-4896-b715-e74abb6f4ae9" />
 
 This web application visualizes Azure DevOps pipeline duration trends so teams can quickly spot regressions, slow builds, and outliers without combing through multiple Azure DevOps pages. By combining pipeline metadata with intuitive filtering, it becomes easy to identify the longest-running builds, compare branches, and monitor optimizations over time.
 
@@ -11,6 +12,22 @@ This web application visualizes Azure DevOps pipeline duration trends so teams c
 
 # Quick Start
 
+## Docker Compose
+
+```YAML
+services:
+  ado-build-time-dashboard:
+    container_name: ado-build-time-dashboard
+    image: ghcr.io/william-opie/ado-build-time-dashboard:20251113.1
+    ports:
+      - "8000:8000"
+    environment:
+      - AZDO_ORG=${AZDO_ORG}
+      - AZDO_PROJECT=${AZDO_PROJECT}
+      - AZDO_PAT=${AZDO_PAT}
+```
+
+## Docker CLI
 Build:
 ```bash
 docker build -t ado-pipeline-runtime-dashboard .
