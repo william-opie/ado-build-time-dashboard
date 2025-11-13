@@ -311,30 +311,9 @@ def index():
       margin-top: 0.75rem;
       padding: 0.75rem 1rem;
       border-radius: 8px;
-      background: var(--error-bg);
-      color: var(--error-text);
+      background: #fee2e2;
+      color: #991b1b;
       display: none;
-    }
-    .theme-toggle {
-      margin-left: auto;
-    }
-    .resizer {
-      position: absolute;
-      right: 0;
-      top: 0;
-      width: 6px;
-      height: 100%;
-      cursor: col-resize;
-      user-select: none;
-    }
-    .resizer::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 2px;
-      width: 2px;
-      background: transparent;
     }
   </style>
 </head>
