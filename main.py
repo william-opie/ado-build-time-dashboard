@@ -254,6 +254,32 @@ def index():
       font-weight: 600;
       transition: background 0.2s ease;
     }
+    .theme-toggle {
+      position: fixed;
+      top: 1.25rem;
+      right: 1.75rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--table-border);
+      background: var(--card-bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      padding: 0;
+    }
+    .theme-toggle:focus-visible {
+      outline: 2px solid var(--button-bg);
+      outline-offset: 3px;
+    }
+    body.dark .theme-toggle {
+      border-color: var(--table-border);
+      background: var(--card-bg);
+      color: var(--text);
+    }
     button:disabled {
       opacity: 0.6;
       cursor: default;
@@ -343,6 +369,7 @@ def index():
   </style>
 </head>
 <body>
+  <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode"></button>
   <h1>Azure DevOps Pipeline Runtime Dashboard</h1>
   <div class="card">
     <div class="filters">
@@ -387,7 +414,6 @@ def index():
       <div class="field">
         <button id="loadButton" onclick="loadBuilds()">Load builds</button>
       </div>
-      <button id="themeToggle" class="theme-toggle" type="button">Switch to dark mode</button>
     </div>
     <div class="summary" id="summary"></div>
     <div class="error-banner" id="errorBanner"></div>
@@ -668,10 +694,12 @@ function initColumnResizers() {
   });
 }
 
-function updateThemeToggleText() {
+function updateThemeToggleAppearance() {
   const toggle = document.getElementById("themeToggle");
   if (!toggle) return;
-  toggle.textContent = document.body.classList.contains("dark") ? "Switch to light mode" : "Switch to dark mode";
+  const isDark = document.body.classList.contains("dark");
+  toggle.textContent = isDark ? "☀️" : "🌙";
+  toggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
 }
 
 function initTheme() {
@@ -679,13 +707,13 @@ function initTheme() {
   if (saved === "dark") {
     document.body.classList.add("dark");
   }
-  updateThemeToggleText();
+  updateThemeToggleAppearance();
   const toggle = document.getElementById("themeToggle");
   toggle.addEventListener("click", () => {
     document.body.classList.toggle("dark");
     const mode = document.body.classList.contains("dark") ? "dark" : "light";
     localStorage.setItem("dashboard-theme", mode);
-    updateThemeToggleText();
+    updateThemeToggleAppearance();
   });
 }
 
