@@ -274,6 +274,31 @@ def index():
       background: var(--table-header);
       position: relative;
     }
+    th .resizer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 8px;
+      height: 100%;
+      cursor: col-resize;
+      user-select: none;
+      display: inline-block;
+    }
+    th .resizer::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+      background: var(--table-border);
+      transform: translateX(-50%);
+    }
+    body.resizing,
+    body.resizing * {
+      cursor: col-resize !important;
+      user-select: none !important;
+    }
     tr:hover {
       background: var(--row-hover);
     }
@@ -408,7 +433,27 @@ const defaultColumnWidths = {
   duration: 13,
   link: 5,
 };
+const columnWidthStorageKey = "dashboard-column-widths";
 let columnWidths = { ...defaultColumnWidths };
+
+function loadSavedColumnWidths() {
+  try {
+    const saved = localStorage.getItem(columnWidthStorageKey);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    columnWidths = { ...columnWidths, ...parsed };
+  } catch (err) {
+    console.warn("Failed to load saved column widths", err);
+  }
+}
+
+function persistColumnWidths() {
+  try {
+    localStorage.setItem(columnWidthStorageKey, JSON.stringify(columnWidths));
+  } catch (err) {
+    console.warn("Failed to persist column widths", err);
+  }
+}
 
 function formatDurationHMS(seconds) {
   if (seconds == null) return "";
@@ -600,6 +645,7 @@ function initColumnResizers() {
       const startX = event.pageX;
       const startWidth = columnWidths[columnKey];
       const tableWidth = table.offsetWidth;
+      document.body.classList.add("resizing");
 
       function onMouseMove(moveEvent) {
         const deltaPx = moveEvent.pageX - startX;
@@ -607,11 +653,13 @@ function initColumnResizers() {
         const newWidth = Math.min(60, Math.max(8, startWidth + deltaPercent));
         columnWidths[columnKey] = newWidth;
         applyColumnWidths();
+        persistColumnWidths();
       }
 
       function onMouseUp() {
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
+        document.body.classList.remove("resizing");
       }
 
       document.addEventListener("mousemove", onMouseMove);
@@ -641,6 +689,7 @@ function initTheme() {
   });
 }
 
+loadSavedColumnWidths();
 applyColumnWidths();
 initColumnResizers();
 initTheme();
