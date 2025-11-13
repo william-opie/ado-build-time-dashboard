@@ -186,6 +186,8 @@ def index():
       --input-border: #d1d5db;
       --button-bg: #2563eb;
       --button-text: #fff;
+      --link-color: #2563eb;
+      --link-hover: #1d4ed8;
       --error-bg: #fee2e2;
       --error-text: #991b1b;
     }
@@ -201,6 +203,8 @@ def index():
       --input-border: #334155;
       --button-bg: #38bdf8;
       --button-text: #0f172a;
+      --link-color: #facc15;
+      --link-hover: #fde047;
       --error-bg: #991b1b;
       --error-text: #fee2e2;
     }
@@ -253,6 +257,16 @@ def index():
       color: var(--button-text);
       font-weight: 600;
       transition: background 0.2s ease;
+    }
+    a {
+      color: var(--link-color);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    a:hover,
+    a:focus {
+      color: var(--link-hover);
+      text-decoration: underline;
     }
     .theme-toggle {
       position: fixed;
@@ -644,6 +658,26 @@ async function loadBuilds() {
   }
 }
 
+function attachSearchOnEnter(element) {
+  if (!element) return;
+  element.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      loadBuilds();
+    }
+  });
+}
+
+function initEnterKeySearch() {
+  const inputs = [
+    document.getElementById("branchInput"),
+    document.getElementById("daysInput"),
+    document.getElementById("topInput"),
+    document.getElementById("pipelineFilter"),
+  ];
+  inputs.forEach(attachSearchOnEnter);
+}
+
 // Re-render table if sort or pipeline filter changes
 document.getElementById("sortSelect").addEventListener("change", renderTable);
 document.getElementById("pipelineFilter").addEventListener("input", renderTable);
@@ -721,6 +755,7 @@ loadSavedColumnWidths();
 applyColumnWidths();
 initColumnResizers();
 initTheme();
+initEnterKeySearch();
 </script>
 </body>
 </html>
