@@ -30,6 +30,7 @@ Your `AZDO_PAT` should at minimum Read permission on the project(s) you care abo
 - To compare branches:
     - Leave Branch blank (all branches)
     - Use the table + Pipeline filter + sort by duration.
+- The Branch filter supports wildcards (e.g. `release/*` to include every release branch).
 - To focus on a particular service:
     - Pipeline filter: my-service-name substring
 - If you hit an error while fetching builds, look for the inline red banner above the table for details (no more JavaScript alert popups).
