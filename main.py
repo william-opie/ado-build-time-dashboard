@@ -186,6 +186,8 @@ def index():
       --input-border: #d1d5db;
       --button-bg: #2563eb;
       --button-text: #fff;
+      --link-color: #2563eb;
+      --link-hover: #1d4ed8;
       --error-bg: #fee2e2;
       --error-text: #991b1b;
     }
@@ -201,6 +203,8 @@ def index():
       --input-border: #334155;
       --button-bg: #38bdf8;
       --button-text: #0f172a;
+      --link-color: #facc15;
+      --link-hover: #fde047;
       --error-bg: #991b1b;
       --error-text: #fee2e2;
     }
@@ -254,6 +258,42 @@ def index():
       font-weight: 600;
       transition: background 0.2s ease;
     }
+    a {
+      color: var(--link-color);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    a:hover,
+    a:focus {
+      color: var(--link-hover);
+      text-decoration: underline;
+    }
+    .theme-toggle {
+      position: fixed;
+      top: 1.25rem;
+      right: 1.75rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--table-border);
+      background: var(--card-bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      padding: 0;
+    }
+    .theme-toggle:focus-visible {
+      outline: 2px solid var(--button-bg);
+      outline-offset: 3px;
+    }
+    body.dark .theme-toggle {
+      border-color: var(--table-border);
+      background: var(--card-bg);
+      color: var(--text);
+    }
     button:disabled {
       opacity: 0.6;
       cursor: default;
@@ -273,6 +313,31 @@ def index():
     th {
       background: var(--table-header);
       position: relative;
+    }
+    th .resizer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 8px;
+      height: 100%;
+      cursor: col-resize;
+      user-select: none;
+      display: inline-block;
+    }
+    th .resizer::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+      background: var(--table-border);
+      transform: translateX(-50%);
+    }
+    body.resizing,
+    body.resizing * {
+      cursor: col-resize !important;
+      user-select: none !important;
     }
     tr:hover {
       background: var(--row-hover);
@@ -318,6 +383,7 @@ def index():
   </style>
 </head>
 <body>
+  <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode"></button>
   <h1>Azure DevOps Pipeline Runtime Dashboard</h1>
   <div class="card">
     <div class="filters">
@@ -362,7 +428,6 @@ def index():
       <div class="field">
         <button id="loadButton" onclick="loadBuilds()">Load builds</button>
       </div>
-      <button id="themeToggle" class="theme-toggle" type="button">Switch to dark mode</button>
     </div>
     <div class="summary" id="summary"></div>
     <div class="error-banner" id="errorBanner"></div>
@@ -408,7 +473,27 @@ const defaultColumnWidths = {
   duration: 13,
   link: 5,
 };
+const columnWidthStorageKey = "dashboard-column-widths";
 let columnWidths = { ...defaultColumnWidths };
+
+function loadSavedColumnWidths() {
+  try {
+    const saved = localStorage.getItem(columnWidthStorageKey);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    columnWidths = { ...columnWidths, ...parsed };
+  } catch (err) {
+    console.warn("Failed to load saved column widths", err);
+  }
+}
+
+function persistColumnWidths() {
+  try {
+    localStorage.setItem(columnWidthStorageKey, JSON.stringify(columnWidths));
+  } catch (err) {
+    console.warn("Failed to persist column widths", err);
+  }
+}
 
 function formatDurationHMS(seconds) {
   if (seconds == null) return "";
@@ -573,6 +658,26 @@ async function loadBuilds() {
   }
 }
 
+function attachSearchOnEnter(element) {
+  if (!element) return;
+  element.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      loadBuilds();
+    }
+  });
+}
+
+function initEnterKeySearch() {
+  const inputs = [
+    document.getElementById("branchInput"),
+    document.getElementById("daysInput"),
+    document.getElementById("topInput"),
+    document.getElementById("pipelineFilter"),
+  ];
+  inputs.forEach(attachSearchOnEnter);
+}
+
 // Re-render table if sort or pipeline filter changes
 document.getElementById("sortSelect").addEventListener("change", renderTable);
 document.getElementById("pipelineFilter").addEventListener("input", renderTable);
@@ -600,6 +705,7 @@ function initColumnResizers() {
       const startX = event.pageX;
       const startWidth = columnWidths[columnKey];
       const tableWidth = table.offsetWidth;
+      document.body.classList.add("resizing");
 
       function onMouseMove(moveEvent) {
         const deltaPx = moveEvent.pageX - startX;
@@ -607,11 +713,13 @@ function initColumnResizers() {
         const newWidth = Math.min(60, Math.max(8, startWidth + deltaPercent));
         columnWidths[columnKey] = newWidth;
         applyColumnWidths();
+        persistColumnWidths();
       }
 
       function onMouseUp() {
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
+        document.body.classList.remove("resizing");
       }
 
       document.addEventListener("mousemove", onMouseMove);
@@ -620,10 +728,12 @@ function initColumnResizers() {
   });
 }
 
-function updateThemeToggleText() {
+function updateThemeToggleAppearance() {
   const toggle = document.getElementById("themeToggle");
   if (!toggle) return;
-  toggle.textContent = document.body.classList.contains("dark") ? "Switch to light mode" : "Switch to dark mode";
+  const isDark = document.body.classList.contains("dark");
+  toggle.textContent = isDark ? "☀️" : "🌙";
+  toggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
 }
 
 function initTheme() {
@@ -631,19 +741,21 @@ function initTheme() {
   if (saved === "dark") {
     document.body.classList.add("dark");
   }
-  updateThemeToggleText();
+  updateThemeToggleAppearance();
   const toggle = document.getElementById("themeToggle");
   toggle.addEventListener("click", () => {
     document.body.classList.toggle("dark");
     const mode = document.body.classList.contains("dark") ? "dark" : "light";
     localStorage.setItem("dashboard-theme", mode);
-    updateThemeToggleText();
+    updateThemeToggleAppearance();
   });
 }
 
+loadSavedColumnWidths();
 applyColumnWidths();
 initColumnResizers();
 initTheme();
+initEnterKeySearch();
 </script>
 </body>
 </html>
