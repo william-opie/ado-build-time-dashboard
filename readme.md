@@ -18,7 +18,7 @@ This web application visualizes Azure DevOps pipeline duration trends so teams c
 services:
   ado-build-time-dashboard:
     container_name: ado-build-time-dashboard
-    image: ghcr.io/william-opie/ado-build-time-dashboard:20251113.1
+    image: ghcr.io/william-opie/ado-build-time-dashboard:latest
     ports:
       - "8000:8000"
     environment:
