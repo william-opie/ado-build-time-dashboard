@@ -34,6 +34,9 @@ Your `AZDO_PAT` should at minimum Read permission on the project(s) you care abo
 - To focus on a particular service:
     - Pipeline filter: my-service-name substring
 - If you hit an error while fetching builds, look for the inline red banner above the table for details (no more JavaScript alert popups).
+- Use the *Build status* dropdown to quickly include/exclude succeeded, failed, canceled, or partially succeeded runs without reloading from Azure DevOps.
+- Click the column-resize handles in the table header to right-size each column and keep the most important details visible.
+- Toggle between light and dark mode via the "Switch to dark/light mode" button; the dashboard will remember your preference.
 
 ### Input validation
 - The UI now clamps the *Days* field between 1 and 365 and the *Max builds* field between 1 and 1,000 to match the backend API limits, preventing avoidable 422 errors.

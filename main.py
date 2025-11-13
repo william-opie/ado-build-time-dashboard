@@ -174,21 +174,52 @@ def index():
   <meta charset="UTF-8" />
   <title>Azure DevOps Pipeline Runtime Dashboard</title>
   <style>
+    :root {
+      --bg: #f5f5f5;
+      --card-bg: #fff;
+      --text: #1f2937;
+      --muted-text: #4b5563;
+      --table-border: #e5e7eb;
+      --table-header: #f9fafb;
+      --row-hover: #f3f4f6;
+      --input-bg: #fff;
+      --input-border: #d1d5db;
+      --button-bg: #2563eb;
+      --button-text: #fff;
+      --error-bg: #fee2e2;
+      --error-text: #991b1b;
+    }
+    body.dark {
+      --bg: #0f172a;
+      --card-bg: #1f2937;
+      --text: #f3f4f6;
+      --muted-text: #cbd5f5;
+      --table-border: #374151;
+      --table-header: #1e293b;
+      --row-hover: #273449;
+      --input-bg: #0f172a;
+      --input-border: #334155;
+      --button-bg: #38bdf8;
+      --button-text: #0f172a;
+      --error-bg: #991b1b;
+      --error-text: #fee2e2;
+    }
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       margin: 0;
       padding: 1rem 2rem 3rem 2rem;
-      background: #f5f5f5;
-      color: #222;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s ease, color 0.3s ease;
     }
     h1 {
       margin-top: 0;
     }
     .card {
-      background: #fff;
+      background: var(--card-bg);
       border-radius: 12px;
       padding: 1rem 1.5rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       margin-bottom: 1rem;
     }
     .filters {
@@ -208,7 +239,9 @@ def index():
     .field input, .field select {
       padding: 0.4rem 0.6rem;
       border-radius: 6px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text);
       min-width: 160px;
     }
     button {
@@ -216,9 +249,10 @@ def index():
       border-radius: 6px;
       border: none;
       cursor: pointer;
-      background: #2563eb;
-      color: #fff;
+      background: var(--button-bg);
+      color: var(--button-text);
       font-weight: 600;
+      transition: background 0.2s ease;
     }
     button:disabled {
       opacity: 0.6;
@@ -228,17 +262,20 @@ def index():
       border-collapse: collapse;
       width: 100%;
       font-size: 0.85rem;
+      table-layout: fixed;
     }
     th, td {
       padding: 0.4rem 0.5rem;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid var(--table-border);
       text-align: left;
+      color: var(--text);
     }
     th {
-      background: #f9fafb;
+      background: var(--table-header);
+      position: relative;
     }
     tr:hover {
-      background: #f3f4f6;
+      background: var(--row-hover);
     }
     .badge {
       display: inline-block;
@@ -261,7 +298,7 @@ def index():
     }
     .summary {
       font-size: 0.85rem;
-      color: #4b5563;
+      color: var(--muted-text);
       margin-top: 0.5rem;
     }
     .summary span {
@@ -274,9 +311,30 @@ def index():
       margin-top: 0.75rem;
       padding: 0.75rem 1rem;
       border-radius: 8px;
-      background: #fee2e2;
-      color: #991b1b;
+      background: var(--error-bg);
+      color: var(--error-text);
       display: none;
+    }
+    .theme-toggle {
+      margin-left: auto;
+    }
+    .resizer {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      user-select: none;
+    }
+    .resizer::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 2px;
+      width: 2px;
+      background: transparent;
     }
   </style>
 </head>
@@ -301,17 +359,31 @@ def index():
         <input id="pipelineFilter" type="text" placeholder="e.g. api-service" />
       </div>
       <div class="field">
+        <label for="statusFilter">Build status</label>
+        <select id="statusFilter">
+          <option value="all">All</option>
+          <option value="succeeded">Succeeded</option>
+          <option value="partiallysucceeded">Partially succeeded</option>
+          <option value="failed">Failed</option>
+          <option value="canceled">Canceled</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
         <label for="sortSelect">Sort by</label>
         <select id="sortSelect">
           <option value="duration_desc">Duration (longest first)</option>
           <option value="duration_asc">Duration (shortest first)</option>
           <option value="start_desc">Start time (newest first)</option>
           <option value="start_asc">Start time (oldest first)</option>
+          <option value="status_desc">Build status (worst first)</option>
+          <option value="status_asc">Build status (best first)</option>
         </select>
       </div>
       <div class="field">
         <button id="loadButton" onclick="loadBuilds()">Load builds</button>
       </div>
+      <button id="themeToggle" class="theme-toggle" type="button">Switch to dark mode</button>
     </div>
     <div class="summary" id="summary"></div>
     <div class="error-banner" id="errorBanner"></div>
@@ -319,6 +391,15 @@ def index():
 
   <div class="card">
     <table id="buildsTable">
+      <colgroup>
+        <col data-col="pipeline" />
+        <col data-col="branch" />
+        <col data-col="build" />
+        <col data-col="status" />
+        <col data-col="start" />
+        <col data-col="duration" />
+        <col data-col="link" />
+      </colgroup>
       <thead>
         <tr>
           <th>Pipeline</th>
@@ -326,7 +407,6 @@ def index():
           <th>Build #</th>
           <th>Status</th>
           <th>Start Time (UTC)</th>
-          <th>Duration (min)</th>
           <th>Duration (hh:mm:ss)</th>
           <th>Link</th>
         </tr>
@@ -339,6 +419,17 @@ def index():
 
 <script>
 let currentBuilds = [];
+const columnKeys = ["pipeline", "branch", "build", "status", "start", "duration", "link"];
+const defaultColumnWidths = {
+  pipeline: 20,
+  branch: 18,
+  build: 12,
+  status: 12,
+  start: 20,
+  duration: 13,
+  link: 5,
+};
+let columnWidths = { ...defaultColumnWidths };
 
 function formatDurationHMS(seconds) {
   if (seconds == null) return "";
@@ -363,6 +454,7 @@ function renderTable() {
   tbody.innerHTML = "";
 
   const pipelineFilter = document.getElementById("pipelineFilter").value.trim().toLowerCase();
+  const statusFilter = document.getElementById("statusFilter").value;
   const sortValue = document.getElementById("sortSelect").value;
 
   let builds = [...currentBuilds];
@@ -373,7 +465,24 @@ function renderTable() {
     );
   }
 
+  if (statusFilter !== "all") {
+    builds = builds.filter(b => {
+      const status = (b.result || "").toLowerCase();
+      if (statusFilter === "other") {
+        return !["succeeded", "partiallysucceeded", "failed", "canceled"].includes(status || "");
+      }
+      return status === statusFilter;
+    });
+  }
+
   // Sorting
+  const statusRank = (result) => {
+    const normalized = (result || "").toLowerCase();
+    const order = ["failed", "canceled", "partiallysucceeded", "succeeded", "other"];
+    const mapped = order.includes(normalized) ? normalized : "other";
+    return order.indexOf(mapped);
+  };
+
   builds.sort((a, b) => {
     if (sortValue === "duration_desc") {
       return (b.durationSeconds || 0) - (a.durationSeconds || 0);
@@ -383,6 +492,10 @@ function renderTable() {
       return new Date(b.startTime) - new Date(a.startTime);
     } else if (sortValue === "start_asc") {
       return new Date(a.startTime) - new Date(b.startTime);
+    } else if (sortValue === "status_desc") {
+      return statusRank(a.result) - statusRank(b.result);
+    } else if (sortValue === "status_asc") {
+      return statusRank(b.result) - statusRank(a.result);
     }
     return 0;
   });
@@ -414,10 +527,6 @@ function renderTable() {
     startTd.className = "nowrap";
     startTd.textContent = b.startTime ? new Date(b.startTime).toISOString().replace("Z", "") : "";
     tr.appendChild(startTd);
-
-    const durMinTd = document.createElement("td");
-    durMinTd.textContent = b.durationMinutes != null ? b.durationMinutes.toFixed(2) : "";
-    tr.appendChild(durMinTd);
 
     const durHMSTd = document.createElement("td");
     durHMSTd.textContent = b.durationSeconds != null ? formatDurationHMS(b.durationSeconds) : "";
@@ -488,6 +597,74 @@ async function loadBuilds() {
 // Re-render table if sort or pipeline filter changes
 document.getElementById("sortSelect").addEventListener("change", renderTable);
 document.getElementById("pipelineFilter").addEventListener("input", renderTable);
+document.getElementById("statusFilter").addEventListener("change", renderTable);
+
+function applyColumnWidths() {
+  columnKeys.forEach((key) => {
+    const col = document.querySelector(`#buildsTable col[data-col="${key}"]`);
+    if (col && columnWidths[key]) {
+      col.style.width = columnWidths[key] + "%";
+    }
+  });
+}
+
+function initColumnResizers() {
+  const table = document.getElementById("buildsTable");
+  const headers = table.querySelectorAll("th");
+  headers.forEach((th, index) => {
+    const handle = document.createElement("span");
+    handle.className = "resizer";
+    th.appendChild(handle);
+    handle.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      const columnKey = columnKeys[index];
+      const startX = event.pageX;
+      const startWidth = columnWidths[columnKey];
+      const tableWidth = table.offsetWidth;
+
+      function onMouseMove(moveEvent) {
+        const deltaPx = moveEvent.pageX - startX;
+        const deltaPercent = (deltaPx / tableWidth) * 100;
+        const newWidth = Math.min(60, Math.max(8, startWidth + deltaPercent));
+        columnWidths[columnKey] = newWidth;
+        applyColumnWidths();
+      }
+
+      function onMouseUp() {
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+      }
+
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    });
+  });
+}
+
+function updateThemeToggleText() {
+  const toggle = document.getElementById("themeToggle");
+  if (!toggle) return;
+  toggle.textContent = document.body.classList.contains("dark") ? "Switch to light mode" : "Switch to dark mode";
+}
+
+function initTheme() {
+  const saved = localStorage.getItem("dashboard-theme");
+  if (saved === "dark") {
+    document.body.classList.add("dark");
+  }
+  updateThemeToggleText();
+  const toggle = document.getElementById("themeToggle");
+  toggle.addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    const mode = document.body.classList.contains("dark") ? "dark" : "light";
+    localStorage.setItem("dashboard-theme", mode);
+    updateThemeToggleText();
+  });
+}
+
+applyColumnWidths();
+initColumnResizers();
+initTheme();
 </script>
 </body>
 </html>
