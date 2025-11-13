@@ -1,0 +1,10 @@
+services:
+  ado-build-time-dashboard:
+    container_name: ado-build-time-dashboard
+    image: ghcr.io/william-opie/ado-build-time-dashboard:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - AZDO_ORG=${AZDO_ORG}
+      - AZDO_PROJECT=${AZDO_PROJECT}
+      - AZDO_PAT=${AZDO_PAT}
