@@ -76,13 +76,22 @@ class AzureDevOpsClient:
     ) -> List[Dict[str, Any]]:
         """Project raw API builds into dashboard schema."""
 
-        items: Iterable[Dict[str, Any]] = raw.get("value", [])
+        raw_items: Iterable[Dict[str, Any]] = raw.get("value", [])
         if wildcard_pattern:
-            items = [
+            raw_items = [
                 b
-                for b in items
+                for b in raw_items
                 if branch_matches(b.get("sourceBranch") or "", wildcard_pattern)
             ]
+        items = list(raw_items)
+
+        def sort_key(build: Dict[str, Any]) -> datetime:
+            finish = parse_azdo_time(build.get("finishTime"))
+            start = parse_azdo_time(build.get("startTime"))
+            queue = parse_azdo_time(build.get("queueTime"))
+            return finish or start or queue or datetime.min.replace(tzinfo=timezone.utc)
+
+        items.sort(key=sort_key, reverse=True)
 
         builds_out: List[Dict[str, Any]] = []
         for build in items:
