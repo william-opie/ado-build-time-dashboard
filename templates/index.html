@@ -38,7 +38,37 @@
           Timezone
           <select id="timezoneSelect" name="timezone_name" aria-label="Timezone preference"></select>
         </label>
-        <button type="submit" id="loadButton">Load builds</button>
+        <div class="status-filter" id="statusFilter">
+          <span class="status-label">Status</span>
+          <button
+            type="button"
+            class="status-toggle"
+            id="statusToggle"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            <span id="statusSelectionLabel">All statuses</span>
+            <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+          <div class="status-options" role="group" aria-label="Status filters">
+            <label class="status-option">
+              <input type="checkbox" name="results" value="succeeded" checked />
+              Succeeded
+            </label>
+            <label class="status-option">
+              <input type="checkbox" name="results" value="failed" checked />
+              Failed
+            </label>
+            <label class="status-option">
+              <input type="checkbox" name="results" value="partiallySucceeded" checked />
+              Partially Succeeded
+            </label>
+            <label class="status-option">
+              <input type="checkbox" name="results" value="canceled" checked />
+              Canceled
+            </label>
+          </div>
+        </div>
       </form>
       <div class="summary" aria-live="polite" id="summary"></div>
       <div class="error" role="alert" id="errorBanner" hidden></div>
@@ -55,7 +85,6 @@
               <th scope="col">Status</th>
               <th scope="col">Start Time</th>
               <th scope="col">Duration</th>
-              <th scope="col">Link</th>
             </tr>
           </thead>
           <tbody></tbody>

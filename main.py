@@ -79,6 +79,9 @@ def get_builds(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     timezone_name: str = Query("UTC", description="IANA timezone, e.g. 'America/Los_Angeles'."),
+    results: list[str] | None = Query(
+        None, description="Build results to include (repeat param for multiples)."
+    ),
     azdo_client: AzureDevOpsClient = Depends(get_client),
 ) -> dict:
     """Fetch builds from Azure DevOps with pagination, caching, and filtering."""
@@ -103,6 +106,12 @@ def get_builds(
     except Exception as exc:  # noqa: BLE001
         LOGGER.exception("Failed to fetch builds")
         raise HTTPException(status_code=500, detail="Unable to fetch builds.") from exc
+
+    result_filters = {value.lower() for value in (results or []) if value}
+    if result_filters:
+        builds = [
+            build for build in builds if (build.get("result") or "").lower() in result_filters
+        ]
 
     total = len(builds)
     start = (page - 1) * page_size

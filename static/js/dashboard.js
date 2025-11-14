@@ -6,6 +6,11 @@ const form = document.getElementById('filters');
 const themeToggle = document.getElementById('themeToggle');
 const timezoneSelect = document.getElementById('timezoneSelect');
 const defaults = document.body.dataset;
+const statusInputs = Array.from(document.querySelectorAll('input[name="results"]'));
+const statusLabel = document.getElementById('statusSelectionLabel');
+const statusFilter = document.getElementById('statusFilter');
+const statusToggle = document.getElementById('statusToggle');
+const statusPanel = statusFilter?.querySelector('.status-options');
 let currentPage = 1;
 
 const PRESET_TIMEZONES = [
@@ -15,6 +20,13 @@ const PRESET_TIMEZONES = [
   { label: 'US Mountain', value: 'America/Denver' },
   { label: 'US Pacific', value: 'America/Los_Angeles' },
 ];
+
+const RESULT_META = {
+  succeeded: { label: 'Succeeded', badgeClass: 'badge--success' },
+  failed: { label: 'Failed', badgeClass: 'badge--danger' },
+  partiallysucceeded: { label: 'Partially Succeeded', badgeClass: 'badge--warning' },
+  canceled: { label: 'Canceled', badgeClass: 'badge--muted' },
+};
 
 function toggleTheme() {
   const root = document.documentElement;
@@ -78,6 +90,33 @@ function clearError() {
   errorBanner.textContent = '';
 }
 
+function updateStatusSummary() {
+  const total = statusInputs.length;
+  const checked = statusInputs.filter((input) => input.checked).length;
+  if (!statusLabel) {
+    return;
+  }
+  if (checked === 0) {
+    statusLabel.textContent = 'None selected';
+  } else if (checked === total) {
+    statusLabel.textContent = 'All statuses';
+  } else if (checked === 1) {
+    const input = statusInputs.find((item) => item.checked);
+    const meta = getResultMeta(input?.value);
+    statusLabel.textContent = meta.label;
+  } else {
+    statusLabel.textContent = `${checked} selected`;
+  }
+}
+
+function getResultMeta(result) {
+  if (!result) {
+    return { label: 'Unknown', badgeClass: 'badge--neutral' };
+  }
+  const key = String(result).toLowerCase();
+  return RESULT_META[key] ?? { label: result, badgeClass: 'badge--neutral' };
+}
+
 function formatDuration(seconds) {
   if (!seconds && seconds !== 0) return '';
   const h = Math.floor(seconds / 3600);
@@ -92,14 +131,18 @@ function render(builds) {
   tableBody.innerHTML = '';
   builds.forEach((build) => {
     const row = document.createElement('tr');
+    const statusMeta = getResultMeta(build.result);
+    const buildNumber = build.buildNumber ?? '';
+    const buildLink = build.webUrl
+      ? `<a href="${build.webUrl}" target="_blank" rel="noreferrer">${buildNumber}</a>`
+      : buildNumber;
     row.innerHTML = `
       <td>${build.pipelineName ?? ''}</td>
       <td>${build.sourceBranchDisplay ?? ''}</td>
-      <td>${build.buildNumber ?? ''}</td>
-      <td><span class="badge">${build.result ?? ''}</span></td>
+      <td>${buildLink}</td>
+      <td><span class="badge ${statusMeta.badgeClass}">${statusMeta.label}</span></td>
       <td>${build.startTime ?? ''}</td>
       <td>${formatDuration(build.durationSeconds)}</td>
-      <td>${build.webUrl ? `<a href="${build.webUrl}" target="_blank" rel="noreferrer">Open</a>` : ''}</td>
     `;
     tableBody.appendChild(row);
   });
@@ -144,6 +187,50 @@ timezoneSelect.addEventListener('change', () => {
   loadBuilds();
 });
 
+statusInputs.forEach((input) => {
+  input.addEventListener('change', () => {
+    updateStatusSummary();
+    loadBuilds(1);
+  });
+});
+
+function setStatusPanelState(isOpen) {
+  if (!statusFilter || !statusPanel || !statusToggle) return;
+  statusFilter.classList.toggle('is-open', isOpen);
+  statusPanel.hidden = !isOpen;
+  statusToggle.setAttribute('aria-expanded', String(isOpen));
+}
+
+statusToggle?.addEventListener('click', (event) => {
+  event.preventDefault();
+  const nextState = !statusFilter?.classList.contains('is-open');
+  setStatusPanelState(nextState);
+});
+
+document.addEventListener('click', (event) => {
+  if (!statusFilter || !statusFilter.classList.contains('is-open')) return;
+  if (statusFilter.contains(event.target)) return;
+  setStatusPanelState(false);
+});
+
+statusPanel?.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    setStatusPanelState(false);
+    statusToggle?.focus();
+  }
+});
+
+setStatusPanelState(false);
+
+form.addEventListener('keydown', (event) => {
+  const tag = event.target?.tagName;
+  const isTextControl = tag === 'INPUT' || tag === 'SELECT';
+  if (event.key === 'Enter' && isTextControl) {
+    event.preventDefault();
+    loadBuilds(1);
+  }
+});
+
 // initialize defaults
 populateTimezoneOptions();
 form.elements.days.value = defaults.defaultDays;
@@ -151,4 +238,5 @@ form.elements.top.value = defaults.defaultTop;
 if (!form.elements.timezone_name.value) {
   form.elements.timezone_name.value = timezoneSelect.value || 'UTC';
 }
+updateStatusSummary();
 loadBuilds();

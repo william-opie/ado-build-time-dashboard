@@ -6,6 +6,14 @@
   --border: #e5e7eb;
   --primary: #2563eb;
   --error: #b91c1c;
+  --success-bg: #dcfce7;
+  --success-text: #166534;
+  --danger-bg: #fee2e2;
+  --danger-text: #991b1b;
+  --warn-bg: #fef3c7;
+  --warn-text: #92400e;
+  --neutral-bg: #e5e7eb;
+  --neutral-text: #1f2937;
 }
 
 :root.dark {
@@ -17,6 +25,14 @@
   --primary: #38bdf8;
   --error: #fecaca;
   --link: #93c5fd;
+  --success-bg: #14532d;
+  --success-text: #bbf7d0;
+  --danger-bg: #450a0a;
+  --danger-text: #fecaca;
+  --warn-bg: #78350f;
+  --warn-text: #fde68a;
+  --neutral-bg: #374151;
+  --neutral-text: #e5e7eb;
 }
 
 body {
@@ -46,6 +62,13 @@ form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.75rem;
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  form {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
 }
 
 label {
@@ -55,6 +78,82 @@ label {
   color: var(--muted);
 }
 
+.status-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  position: relative;
+  min-width: 0;
+}
+
+.status-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.status-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin: 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.6rem;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  gap: 0.5rem;
+}
+
+.status-filter .chevron {
+  font-size: 0.75rem;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.status-filter.is-open .chevron {
+  transform: rotate(180deg);
+}
+
+.status-options {
+  display: none;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 5;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.15);
+}
+
+.status-filter.is-open .status-options {
+  display: flex;
+}
+
+.status-option {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.status-chip {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+
 input,
 select,
 button {
@@ -62,6 +161,8 @@ button {
   border-radius: 6px;
   border: 1px solid var(--border);
   padding: 0.45rem 0.6rem;
+  background: var(--card-bg);
+  color: var(--text);
 }
 
 button {
@@ -116,6 +217,42 @@ a {
 .error {
   margin-top: 0.75rem;
   color: var(--error);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.badge--success {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.badge--danger {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.badge--warning {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+
+.badge--muted {
+  background: var(--neutral-bg);
+  color: var(--neutral-text);
+}
+
+.badge--neutral {
+  background: var(--border);
+  color: var(--text);
 }
 
 .spinner {
