@@ -71,7 +71,7 @@ async def index(request: Request) -> HTMLResponse:
 
 
 @app.get("/api/builds")
-async def get_builds(
+def get_builds(
     request: Request,
     branch: Optional[str] = Query(None, description="Branch name or wildcard pattern."),
     days: int = Query(settings.default_days, ge=1, le=settings.max_days),
