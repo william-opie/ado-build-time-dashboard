@@ -124,6 +124,9 @@ def get_builds(
             if pipeline_filter in (build.get("pipelineName") or "").lower()
         ]
 
+    if top:
+        builds = builds[:top]
+
     total = len(builds)
     start = (page - 1) * page_size
     end = start + page_size

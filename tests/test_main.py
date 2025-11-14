@@ -79,3 +79,20 @@ def test_page_size_alias_allows_paginated_response(api_client):
     assert data["page"] == 2
     assert data["pageSize"] == 1
     assert data["builds"][0]["id"] == 11
+
+
+def test_top_limit_applied_after_filters(api_client):
+    client, fake = api_client
+    fake.builds = [
+        {"id": 1, "pipelineName": "Pipe A", "result": "succeeded"},
+        {"id": 2, "pipelineName": "Pipe B", "result": "failed"},
+        {"id": 3, "pipelineName": "Pipe C", "result": "failed"},
+    ]
+
+    response = client.get("/api/builds?top=2&pageSize=5")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 2
+    assert data["count"] == 2
+    assert [build["id"] for build in data["builds"]] == [1, 2]
