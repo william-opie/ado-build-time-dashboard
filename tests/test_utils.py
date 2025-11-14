@@ -4,7 +4,7 @@ from unittest import mock
 from app.cache import TTLCache
 from app.clients.azure_devops import AzureDevOpsClient
 from app.config import Settings
-from app.utils import branch_has_wildcard, normalize_branch
+from app.utils import branch_has_wildcard, branch_matches, normalize_branch, strip_refs_heads
 
 
 def test_normalize_branch_prefixes_refs():
@@ -15,6 +15,18 @@ def test_normalize_branch_prefixes_refs():
 def test_branch_has_wildcard():
     assert branch_has_wildcard("release/*")
     assert not branch_has_wildcard("refs/heads/main")
+
+
+def test_strip_refs_heads():
+    assert strip_refs_heads("refs/heads/feature/foo") == "feature/foo"
+    assert strip_refs_heads("refs/tags/v1") == "refs/tags/v1"
+    assert strip_refs_heads(None) is None
+
+
+def test_branch_matches_patterns():
+    assert branch_matches("refs/heads/feature/foo", "refs/heads/feature/*")
+    assert branch_matches("main", "main")
+    assert not branch_matches("refs/heads/release", "refs/heads/hotfix/*")
 
 
 def test_ttl_cache_expires():
