@@ -97,6 +97,7 @@ class AzureDevOpsClient:
         for build in items:
             start = parse_azdo_time(build.get("startTime"))
             finish = parse_azdo_time(build.get("finishTime"))
+            queue = parse_azdo_time(build.get("queueTime"))
             duration_seconds = format_duration(start, finish)
             web_url = build.get("webUrl")
             if not web_url and (build_id := build.get("id")):
@@ -104,6 +105,8 @@ class AzureDevOpsClient:
                     f"https://dev.azure.com/{self._settings.azdo_org}/{self._settings.azdo_project}/"
                     f"_build/results?buildId={build_id}"
                 )
+            start_timestamp = (start or finish or queue)
+            finish_timestamp = finish or start or queue
 
             builds_out.append(
                 {
@@ -116,6 +119,8 @@ class AzureDevOpsClient:
                     "status": build.get("status"),
                     "startTime": to_timezone(start, timezone_name),
                     "finishTime": to_timezone(finish, timezone_name),
+                    "startTimestamp": start_timestamp.timestamp() if start_timestamp else None,
+                    "finishTimestamp": finish_timestamp.timestamp() if finish_timestamp else None,
                     "durationSeconds": duration_seconds,
                     "webUrl": web_url,
                 }

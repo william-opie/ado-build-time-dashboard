@@ -93,7 +93,19 @@
               <th scope="col">Branch</th>
               <th scope="col">Build #</th>
               <th scope="col">Status</th>
-              <th scope="col">Start Time</th>
+              <th scope="col" class="table-sort-header">
+                <button
+                  type="button"
+                  id="startTimeSort"
+                  class="table-sort"
+                  aria-label="Sort by start time"
+                >
+                  <span>Start Time</span>
+                  <span class="sort-indicator" aria-live="polite" aria-atomic="true"
+                    >Newest → Oldest</span
+                  >
+                </button>
+              </th>
               <th scope="col">Duration</th>
             </tr>
           </thead>

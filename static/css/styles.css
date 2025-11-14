@@ -221,6 +221,28 @@ td {
   text-align: left;
 }
 
+.table-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.table-sort:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.sort-indicator {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 a {
   color: var(--primary);
 }

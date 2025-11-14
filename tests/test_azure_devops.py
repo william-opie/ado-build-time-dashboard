@@ -35,6 +35,7 @@ def test_transform_builds_sorted_by_finish_time_descending():
     builds = client.transform_builds(raw, timezone_name="UTC")
 
     assert [build["id"] for build in builds] == [2, 1]
+    assert builds[0]["startTimestamp"] > builds[1]["startTimestamp"]
 
 
 def test_transform_builds_uses_start_time_when_finish_missing():
@@ -63,3 +64,35 @@ def test_transform_builds_uses_start_time_when_finish_missing():
     builds = client.transform_builds(raw, timezone_name="UTC")
 
     assert [build["id"] for build in builds] == [3, 4]
+    assert builds[0]["startTimestamp"] > builds[1]["startTimestamp"]
+
+
+def test_transform_builds_start_timestamp_falls_back_when_missing_start():
+    client = make_client()
+    raw = {
+        "value": [
+            {
+                "id": 5,
+                "buildNumber": "build-5",
+                "definition": {"name": "Pipe"},
+                "sourceBranch": "refs/heads/main",
+                "queueTime": "2025-11-01T12:00:00Z",
+                "finishTime": "2025-11-01T12:10:00Z",
+                "startTime": None,
+            },
+            {
+                "id": 6,
+                "buildNumber": "build-6",
+                "definition": {"name": "Pipe"},
+                "sourceBranch": "refs/heads/main",
+                "queueTime": "2025-10-01T12:00:00Z",
+                "finishTime": "2025-10-01T12:10:00Z",
+                "startTime": None,
+            },
+        ]
+    }
+
+    builds = client.transform_builds(raw, timezone_name="UTC")
+
+    assert [build["id"] for build in builds] == [5, 6]
+    assert builds[0]["startTimestamp"] > builds[1]["startTimestamp"]

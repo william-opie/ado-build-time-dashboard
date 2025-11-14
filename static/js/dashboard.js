@@ -18,8 +18,11 @@ const paginationControls = document.getElementById('paginationControls');
 const prevPageButton = document.getElementById('prevPage');
 const nextPageButton = document.getElementById('nextPage');
 const pageIndicator = document.getElementById('pageIndicator');
+const startTimeSortButton = document.getElementById('startTimeSort');
 let currentPage = 1;
 let totalPages = 1;
+let currentBuilds = [];
+let startSortDirection = 'desc';
 
 function debounce(fn, wait = 250) {
   let timeoutId;
@@ -45,6 +48,54 @@ const RESULT_META = {
   partiallysucceeded: { label: 'Partially Succeeded', badgeClass: 'badge--warning' },
   canceled: { label: 'Canceled', badgeClass: 'badge--muted' },
 };
+
+const SORT_DIRECTION_LABELS = {
+  desc: 'Newest → Oldest',
+  asc: 'Oldest → Newest',
+};
+
+function coerceTimestamp(value) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function getSortTimestamp(build) {
+  if (!build) {
+    return Number.NEGATIVE_INFINITY;
+  }
+  return (
+    coerceTimestamp(build.startTimestamp) ??
+    coerceTimestamp(build.finishTimestamp) ??
+    Number.NEGATIVE_INFINITY
+  );
+}
+
+function sortBuildsForDisplay(builds) {
+  const list = Array.isArray(builds) ? [...builds] : [];
+  list.sort((a, b) => {
+    const aTs = getSortTimestamp(a);
+    const bTs = getSortTimestamp(b);
+    if (aTs === bTs) {
+      return 0;
+    }
+    return startSortDirection === 'desc' ? bTs - aTs : aTs - bTs;
+  });
+  return list;
+}
+
+function updateStartSortButton() {
+  if (!startTimeSortButton) return;
+  const label = SORT_DIRECTION_LABELS[startSortDirection];
+  const indicator = startTimeSortButton.querySelector('.sort-indicator');
+  if (indicator) {
+    indicator.textContent = label;
+  }
+  startTimeSortButton.dataset.direction = startSortDirection;
+  startTimeSortButton.setAttribute('aria-label', `Sort by start time (${label})`);
+}
 
 function toggleTheme() {
   const root = document.documentElement;
@@ -158,8 +209,12 @@ function formatDuration(seconds) {
 }
 
 function render(builds) {
+  if (Array.isArray(builds)) {
+    currentBuilds = builds;
+  }
+  const buildsToRender = sortBuildsForDisplay(currentBuilds);
   tableBody.innerHTML = '';
-  builds.forEach((build) => {
+  buildsToRender.forEach((build) => {
     const row = document.createElement('tr');
     const statusMeta = getResultMeta(build.result);
     const buildNumber = build.buildNumber ?? '';
@@ -290,6 +345,12 @@ nextPageButton?.addEventListener('click', () => {
   }
 });
 
+startTimeSortButton?.addEventListener('click', () => {
+  startSortDirection = startSortDirection === 'desc' ? 'asc' : 'desc';
+  updateStartSortButton();
+  render();
+});
+
 form.addEventListener('keydown', (event) => {
   const tag = event.target?.tagName;
   const isTextControl = tag === 'INPUT' || tag === 'SELECT';
@@ -310,4 +371,5 @@ if (!form.elements.timezone_name.value) {
   form.elements.timezone_name.value = timezoneSelect.value || 'UTC';
 }
 updateStatusSummary();
+updateStartSortButton();
 loadBuilds();
