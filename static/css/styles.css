@@ -59,16 +59,10 @@ header {
 }
 
 form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  align-items: start;
-}
-
-@media (min-width: 1100px) {
-  form {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
+  align-items: flex-start;
 }
 
 label {
@@ -76,6 +70,17 @@ label {
   flex-direction: column;
   font-size: 0.9rem;
   color: var(--muted);
+  flex: 1 1 150px;
+  min-width: 150px;
+}
+
+.label--compact {
+  flex: 0 0 auto;
+  min-width: auto;
+}
+
+.label--compact input {
+  width: 7rem;
 }
 
 .status-filter {
@@ -83,7 +88,10 @@ label {
   flex-direction: column;
   gap: 0.35rem;
   position: relative;
-  min-width: 0;
+  min-width: 200px;
+  max-width: 260px;
+  flex: 1 1 200px;
+  align-self: flex-start;
 }
 
 .status-label {
@@ -120,17 +128,19 @@ label {
 .status-options {
   display: none;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.75rem;
+  gap: 0.1rem;
+  padding: 0.5rem;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--card-bg);
   position: absolute;
   left: 0;
-  right: 0;
+  width: 100%;
   top: calc(100% + 0.25rem);
   z-index: 5;
   box-shadow: 0 8px 24px rgb(15 23 42 / 0.15);
+  max-height: 260px;
+  overflow-y: auto;
 }
 
 .status-filter.is-open .status-options {
@@ -138,11 +148,21 @@ label {
 }
 
 .status-option {
+  display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.25rem;
+  padding: 0.1rem 0;
+  margin: 0;
+  flex: 0 0 auto;
+  min-width: auto;
   color: var(--text);
   font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.status-option input {
+  margin-top: 0;
 }
 
 .status-chip {

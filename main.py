@@ -79,6 +79,9 @@ def get_builds(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     timezone_name: str = Query("UTC", description="IANA timezone, e.g. 'America/Los_Angeles'."),
+    pipeline: Optional[str] = Query(
+        None, description="Case-insensitive substring to filter by pipeline name."
+    ),
     results: list[str] | None = Query(
         None, description="Build results to include (repeat param for multiples)."
     ),
@@ -113,6 +116,14 @@ def get_builds(
             build for build in builds if (build.get("result") or "").lower() in result_filters
         ]
 
+    pipeline_filter = (pipeline or "").strip().lower()
+    if pipeline_filter:
+        builds = [
+            build
+            for build in builds
+            if pipeline_filter in (build.get("pipelineName") or "").lower()
+        ]
+
     total = len(builds)
     start = (page - 1) * page_size
     end = start + page_size
@@ -124,6 +135,7 @@ def get_builds(
         "top": top,
         "page": page,
         "pageSize": page_size,
+        "pipeline": pipeline,
         "timezone": timezone_name,
         "total": total,
         "count": len(paged_builds),

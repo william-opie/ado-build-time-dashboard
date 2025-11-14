@@ -23,14 +23,24 @@
           <input id="branchInput" name="branch" type="text" placeholder="main or release/*" />
         </label>
         <label>
+          Pipeline
+          <input
+            id="pipelineFilter"
+            name="pipeline"
+            type="search"
+            placeholder="Filter by pipeline"
+            autocomplete="off"
+          />
+        </label>
+        <label class="label--compact">
           Lookback (days)
           <input id="daysInput" name="days" type="number" min="1" max="365" required />
         </label>
-        <label>
+        <label class="label--compact">
           Max builds
           <input id="topInput" name="top" type="number" min="1" max="1000" required />
         </label>
-        <label>
+        <label class="label--compact">
           Page size
           <input id="pageSizeInput" name="pageSize" type="number" min="10" max="200" value="50" />
         </label>

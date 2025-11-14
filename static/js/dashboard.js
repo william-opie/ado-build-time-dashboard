@@ -11,7 +11,18 @@ const statusLabel = document.getElementById('statusSelectionLabel');
 const statusFilter = document.getElementById('statusFilter');
 const statusToggle = document.getElementById('statusToggle');
 const statusPanel = statusFilter?.querySelector('.status-options');
+const pipelineFilterInput = document.getElementById('pipelineFilter');
 let currentPage = 1;
+
+function debounce(fn, wait = 250) {
+  let timeoutId;
+  return (...args) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => fn(...args), wait);
+  };
+}
 
 const PRESET_TIMEZONES = [
   { label: 'UTC', value: 'UTC' },
@@ -49,7 +60,7 @@ function populateTimezoneOptions() {
   const options = [];
   if (localTimezone) {
     options.push({
-      label: `Local (${localTimezone})`,
+      label: 'Local',
       value: localTimezone,
     });
   }
@@ -185,6 +196,11 @@ form.addEventListener('submit', (event) => {
 timezoneSelect.addEventListener('change', () => {
   form.elements.timezone_name.value = timezoneSelect.value;
   loadBuilds();
+});
+
+const triggerPipelineFilter = debounce(() => loadBuilds(1), 300);
+pipelineFilterInput?.addEventListener('input', () => {
+  triggerPipelineFilter();
 });
 
 statusInputs.forEach((input) => {
