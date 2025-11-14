@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Azure DevOps Pipeline Runtime Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+  </head>
+  <body data-default-days="{{ defaults.days }}" data-default-top="{{ defaults.top }}">
+    <header>
+      <h1>Azure DevOps Pipeline Runtime Dashboard</h1>
+      <button id="themeToggle" type="button" aria-pressed="false">🌙</button>
+    </header>
+
+    <section class="card">
+      <form id="filters" aria-label="Build filters">
+        <label>
+          Branch
+          <input id="branchInput" name="branch" type="text" placeholder="main or release/*" />
+        </label>
+        <label>
+          Lookback (days)
+          <input id="daysInput" name="days" type="number" min="1" max="365" required />
+        </label>
+        <label>
+          Max builds
+          <input id="topInput" name="top" type="number" min="1" max="1000" required />
+        </label>
+        <label>
+          Page size
+          <input id="pageSizeInput" name="pageSize" type="number" min="10" max="200" value="50" />
+        </label>
+        <label>
+          Timezone
+          <input id="timezoneInput" name="timezone" type="text" placeholder="UTC or America/LA" />
+        </label>
+        <button type="submit" id="loadButton">Load builds</button>
+      </form>
+      <div class="summary" aria-live="polite" id="summary"></div>
+      <div class="error" role="alert" id="errorBanner" hidden></div>
+    </section>
+
+    <section class="card" aria-live="polite">
+      <div class="table-wrapper">
+        <table id="buildsTable">
+          <thead>
+            <tr>
+              <th scope="col">Pipeline</th>
+              <th scope="col">Branch</th>
+              <th scope="col">Build #</th>
+              <th scope="col">Status</th>
+              <th scope="col">Start Time</th>
+              <th scope="col">Duration</th>
+              <th scope="col">Link</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="spinner" id="loadingSpinner" role="status" aria-live="polite" hidden>
+        <span class="sr-only">Loading builds…</span>
+      </div>
+    </section>
+
+    <script src="/static/js/dashboard.js" type="module"></script>
+  </body>
+</html>

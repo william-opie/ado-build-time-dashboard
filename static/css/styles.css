@@ -1,0 +1,143 @@
+:root {
+  --bg: #f5f5f5;
+  --text: #111827;
+  --card-bg: #ffffff;
+  --muted: #4b5563;
+  --border: #e5e7eb;
+  --primary: #2563eb;
+  --error: #b91c1c;
+}
+
+:root.dark {
+  --bg: #0f172a;
+  --text: #f8fafc;
+  --card-bg: #1f2937;
+  --muted: #cbd5f5;
+  --border: #334155;
+  --primary: #38bdf8;
+  --error: #fecaca;
+}
+
+body {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0 auto;
+  padding: 2rem;
+  max-width: 1200px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-top: 1rem;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+input,
+button {
+  margin-top: 0.35rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.6rem;
+}
+
+button {
+  cursor: pointer;
+  background: var(--primary);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+}
+
+button:disabled {
+  opacity: 0.6;
+}
+
+#themeToggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.summary {
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+.error {
+  margin-top: 0.75rem;
+  color: var(--error);
+}
+
+.spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.spinner::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  animation: spin 1s linear infinite;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
