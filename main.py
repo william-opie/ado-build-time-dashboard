@@ -77,7 +77,7 @@ def get_builds(
     days: int = Query(settings.default_days, ge=1, le=settings.max_days),
     top: int = Query(settings.default_top, ge=1, le=settings.max_top),
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=200),
+    page_size: int = Query(50, ge=1, le=200, alias="pageSize"),
     timezone_name: str = Query("UTC", description="IANA timezone, e.g. 'America/Los_Angeles'."),
     pipeline: Optional[str] = Query(
         None, description="Case-insensitive substring to filter by pipeline name."

@@ -316,3 +316,24 @@ a {
     transform: rotate(360deg);
   }
 }
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.pagination button {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.9rem;
+  border-radius: 6px;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

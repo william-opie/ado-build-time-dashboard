@@ -12,7 +12,14 @@ const statusFilter = document.getElementById('statusFilter');
 const statusToggle = document.getElementById('statusToggle');
 const statusPanel = statusFilter?.querySelector('.status-options');
 const pipelineFilterInput = document.getElementById('pipelineFilter');
+const topInput = document.getElementById('topInput');
+const pageSizeInput = document.getElementById('pageSizeInput');
+const paginationControls = document.getElementById('paginationControls');
+const prevPageButton = document.getElementById('prevPage');
+const nextPageButton = document.getElementById('nextPage');
+const pageIndicator = document.getElementById('pageIndicator');
 let currentPage = 1;
+let totalPages = 1;
 
 function debounce(fn, wait = 250) {
   let timeoutId;
@@ -101,6 +108,18 @@ function clearError() {
   errorBanner.textContent = '';
 }
 
+function updatePaginationControls(page, pageSize, total) {
+  if (!paginationControls || !pageIndicator || !prevPageButton || !nextPageButton) {
+    return;
+  }
+  const safePageSize = Math.max(1, Number(pageSize) || 1);
+  totalPages = Math.max(1, Math.ceil(Number(total || 0) / safePageSize));
+  paginationControls.hidden = totalPages <= 1;
+  pageIndicator.textContent = `Page ${page} of ${totalPages}`;
+  prevPageButton.disabled = page <= 1;
+  nextPageButton.disabled = page >= totalPages;
+}
+
 function updateStatusSummary() {
   const total = statusInputs.length;
   const checked = statusInputs.filter((input) => input.checked).length;
@@ -164,6 +183,7 @@ async function loadBuilds(page = currentPage) {
   const formData = new FormData(form);
   formData.set('days', formData.get('days') || defaults.defaultDays);
   formData.set('top', formData.get('top') || defaults.defaultTop);
+  formData.set('pageSize', formData.get('pageSize') || pageSizeInput?.value || '50');
   formData.set('timezone_name', formData.get('timezone_name') || timezoneSelect.value || 'UTC');
   formData.set('page', page);
   const params = new URLSearchParams(formData);
@@ -180,9 +200,17 @@ async function loadBuilds(page = currentPage) {
     currentPage = data.page || 1;
     render(data.builds);
     summary.textContent = `Showing ${data.count} of ${data.total} builds (page ${data.page})`;
+    updatePaginationControls(
+      data.page || 1,
+      data.pageSize || Number(formData.get('pageSize')) || 50,
+      data.total || 0,
+    );
   } catch (error) {
     console.error(error);
     showError(error.message);
+    if (paginationControls) {
+      paginationControls.hidden = true;
+    }
   } finally {
     setLoading(false);
   }
@@ -196,6 +224,18 @@ form.addEventListener('submit', (event) => {
 timezoneSelect.addEventListener('change', () => {
   form.elements.timezone_name.value = timezoneSelect.value;
   loadBuilds();
+});
+
+topInput?.addEventListener('change', () => {
+  loadBuilds(1);
+});
+
+pageSizeInput?.addEventListener('change', () => {
+  const value = Number(pageSizeInput.value);
+  if (Number.isNaN(value) || value <= 0) {
+    pageSizeInput.value = '50';
+  }
+  loadBuilds(1);
 });
 
 const triggerPipelineFilter = debounce(() => loadBuilds(1), 300);
@@ -238,6 +278,18 @@ statusPanel?.addEventListener('keydown', (event) => {
 
 setStatusPanelState(false);
 
+prevPageButton?.addEventListener('click', () => {
+  if (currentPage > 1) {
+    loadBuilds(currentPage - 1);
+  }
+});
+
+nextPageButton?.addEventListener('click', () => {
+  if (currentPage < totalPages) {
+    loadBuilds(currentPage + 1);
+  }
+});
+
 form.addEventListener('keydown', (event) => {
   const tag = event.target?.tagName;
   const isTextControl = tag === 'INPUT' || tag === 'SELECT';
@@ -251,6 +303,9 @@ form.addEventListener('keydown', (event) => {
 populateTimezoneOptions();
 form.elements.days.value = defaults.defaultDays;
 form.elements.top.value = defaults.defaultTop;
+if (form.elements.pageSize && !form.elements.pageSize.value) {
+  form.elements.pageSize.value = '50';
+}
 if (!form.elements.timezone_name.value) {
   form.elements.timezone_name.value = timezoneSelect.value || 'UTC';
 }

@@ -60,3 +60,22 @@ def test_pipeline_filter_ignores_case_and_whitespace(api_client):
     data = response.json()
     assert data["count"] == 1
     assert data["builds"][0]["pipelineName"] == "Reporting Deploy"
+
+
+def test_page_size_alias_allows_paginated_response(api_client):
+    client, fake = api_client
+    fake.builds = [
+        {"id": 10, "pipelineName": "Pipe A", "result": "succeeded"},
+        {"id": 11, "pipelineName": "Pipe B", "result": "failed"},
+        {"id": 12, "pipelineName": "Pipe C", "result": "succeeded"},
+    ]
+
+    response = client.get("/api/builds?page=2&pageSize=1")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["count"] == 1
+    assert data["total"] == 3
+    assert data["page"] == 2
+    assert data["pageSize"] == 1
+    assert data["builds"][0]["id"] == 11
