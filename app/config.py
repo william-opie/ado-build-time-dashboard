@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -25,21 +24,11 @@ def _load_dotenv() -> None:
 
 _load_dotenv()
 
-PAT_PATTERN = re.compile(r"^[A-Za-z0-9]{52}$")
-
 
 def _validate_non_empty(value: Optional[str], name: str) -> str:
     if not value:
         raise RuntimeError(f"Missing required environment variable: {name}")
     return value
-
-
-def _validate_pat(pat: str) -> str:
-    if not PAT_PATTERN.match(pat):
-        raise RuntimeError(
-            "AZDO_PAT does not match the expected 52 character token format."
-        )
-    return pat
 
 
 @dataclass(frozen=True)
@@ -65,7 +54,7 @@ class Settings:
     def from_env(cls) -> "Settings":
         org = _validate_non_empty(os.getenv("AZDO_ORG"), "AZDO_ORG")
         project = _validate_non_empty(os.getenv("AZDO_PROJECT"), "AZDO_PROJECT")
-        pat = _validate_pat(_validate_non_empty(os.getenv("AZDO_PAT"), "AZDO_PAT"))
+        pat = _validate_non_empty(os.getenv("AZDO_PAT"), "AZDO_PAT")
 
         cache_ttl = int(os.getenv("AZDO_CACHE_TTL_SECONDS", "60"))
         rate_limit_requests = int(os.getenv("AZDO_RATE_LIMIT_REQUESTS", "60"))

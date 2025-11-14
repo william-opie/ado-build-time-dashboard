@@ -26,7 +26,7 @@ def test_ttl_cache_expires():
 
 
 def test_transform_builds_converts_timezone():
-    settings = Settings(azdo_org="org", azdo_project="proj", azdo_pat="a" * 52)
+    settings = Settings(azdo_org="org", azdo_project="proj", azdo_pat="dummy-token")
     client = AzureDevOpsClient(settings)
     client._cache.set = mock.Mock()  # avoid caching real call
     raw = {
@@ -45,4 +45,4 @@ def test_transform_builds_converts_timezone():
     }
     builds = client.transform_builds(raw, timezone_name="UTC")
     assert builds[0]["durationSeconds"] == 1800
-    assert builds[0]["startTime"].endswith("+00:00")
+    assert builds[0]["startTime"] == "1/1/2024 12:00 AM"

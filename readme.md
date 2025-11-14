@@ -19,7 +19,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Configure environment
-Copy the sample file and update secrets. The PAT must have **Build (Read)** rights and follow Azure's 52-character format.
+Copy the sample file and update secrets. The PAT must have **Build (Read)** rights.
 ```bash
 cp .env.example .env
 ```
@@ -35,6 +35,14 @@ AZDO_PAT=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 uvicorn main:app --reload --port 8000
 ```
 Visit http://localhost:8000 to load the dashboard.
+
+### Docker CLI
+Build and run the container directly with Docker once your `.env` is populated:
+```bash
+docker build -t ado-build-time-dashboard .
+docker run --rm --env-file .env -p 8000:8000 ado-build-time-dashboard
+```
+The app will be available at http://localhost:8000.
 
 ### Docker compose
 ```yaml

@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Azure DevOps Pipeline Runtime Dashboard</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2064%2064'%3E%3Crect width='64' height='64' rx='12' fill='%232563eb'/%3E%3Cpath d='M20%2032h24' stroke='white' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M20%2020l12%2012-12%2012' stroke='white' stroke-width='6' stroke-linecap='round' fill='none'/%3E%3C/svg%3E"
+    />
     <link rel="stylesheet" href="/static/css/styles.css" />
   </head>
   <body data-default-days="{{ defaults.days }}" data-default-top="{{ defaults.top }}">
@@ -32,7 +36,7 @@
         </label>
         <label>
           Timezone
-          <input id="timezoneInput" name="timezone" type="text" placeholder="UTC or America/LA" />
+          <select id="timezoneSelect" name="timezone_name" aria-label="Timezone preference"></select>
         </label>
         <button type="submit" id="loadButton">Load builds</button>
       </form>

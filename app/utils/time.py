@@ -24,7 +24,7 @@ def format_duration(start: datetime | None, finish: datetime | None) -> float | 
 
 
 def to_timezone(value: datetime | None, tz_name: str) -> str | None:
-    """Convert a datetime to the requested timezone and ISO format string."""
+    """Convert a datetime to the requested timezone and display string."""
 
     if value is None:
         return None
@@ -32,4 +32,8 @@ def to_timezone(value: datetime | None, tz_name: str) -> str | None:
         tz = ZoneInfo(tz_name)
     except ZoneInfoNotFoundError:
         tz = UTC
-    return value.astimezone(tz).isoformat()
+    localized = value.astimezone(tz)
+    hour_24 = localized.hour
+    hour_12 = hour_24 % 12 or 12
+    meridiem = "AM" if hour_24 < 12 else "PM"
+    return f"{localized.month}/{localized.day}/{localized.year} {hour_12}:{localized.minute:02d} {meridiem}"

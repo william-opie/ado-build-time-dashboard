@@ -4,7 +4,17 @@ const errorBanner = document.getElementById('errorBanner');
 const spinner = document.getElementById('loadingSpinner');
 const form = document.getElementById('filters');
 const themeToggle = document.getElementById('themeToggle');
+const timezoneSelect = document.getElementById('timezoneSelect');
 const defaults = document.body.dataset;
+let currentPage = 1;
+
+const PRESET_TIMEZONES = [
+  { label: 'UTC', value: 'UTC' },
+  { label: 'US Eastern', value: 'America/New_York' },
+  { label: 'US Central', value: 'America/Chicago' },
+  { label: 'US Mountain', value: 'America/Denver' },
+  { label: 'US Pacific', value: 'America/Los_Angeles' },
+];
 
 function toggleTheme() {
   const root = document.documentElement;
@@ -22,9 +32,38 @@ if (savedTheme === 'dark') {
   themeToggle.textContent = '☀️';
 }
 
+function populateTimezoneOptions() {
+  const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const options = [];
+  if (localTimezone) {
+    options.push({
+      label: `Local (${localTimezone})`,
+      value: localTimezone,
+    });
+  }
+  PRESET_TIMEZONES.forEach((opt) => {
+    if (!options.some((existing) => existing.value === opt.value)) {
+      options.push(opt);
+    }
+  });
+  timezoneSelect.innerHTML = '';
+  options.forEach((opt, index) => {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.label;
+    option.selected = index === 0;
+    timezoneSelect.appendChild(option);
+  });
+  if (!timezoneSelect.value) {
+    timezoneSelect.value = 'UTC';
+  }
+}
+
 function setLoading(isLoading) {
   spinner.hidden = !isLoading;
-  form.querySelectorAll('input, button').forEach((el) => {
+  spinner.classList.toggle('is-visible', isLoading);
+  spinner.setAttribute('aria-busy', String(isLoading));
+  form.querySelectorAll('input, button, select').forEach((el) => {
     el.disabled = isLoading;
   });
 }
@@ -66,10 +105,12 @@ function render(builds) {
   });
 }
 
-async function loadBuilds(page = 1) {
+async function loadBuilds(page = currentPage) {
+  currentPage = page;
   const formData = new FormData(form);
   formData.set('days', formData.get('days') || defaults.defaultDays);
   formData.set('top', formData.get('top') || defaults.defaultTop);
+  formData.set('timezone_name', formData.get('timezone_name') || timezoneSelect.value || 'UTC');
   formData.set('page', page);
   const params = new URLSearchParams(formData);
 
@@ -82,6 +123,7 @@ async function loadBuilds(page = 1) {
       throw new Error(payload.detail || 'Unable to load builds');
     }
     const data = await response.json();
+    currentPage = data.page || 1;
     render(data.builds);
     summary.textContent = `Showing ${data.count} of ${data.total} builds (page ${data.page})`;
   } catch (error) {
@@ -97,8 +139,16 @@ form.addEventListener('submit', (event) => {
   loadBuilds(1);
 });
 
+timezoneSelect.addEventListener('change', () => {
+  form.elements.timezone_name.value = timezoneSelect.value;
+  loadBuilds();
+});
+
 // initialize defaults
+populateTimezoneOptions();
 form.elements.days.value = defaults.defaultDays;
 form.elements.top.value = defaults.defaultTop;
-form.elements.timezone.value = 'UTC';
+if (!form.elements.timezone_name.value) {
+  form.elements.timezone_name.value = timezoneSelect.value || 'UTC';
+}
 loadBuilds();

@@ -16,6 +16,7 @@
   --border: #334155;
   --primary: #38bdf8;
   --error: #fecaca;
+  --link: #93c5fd;
 }
 
 body {
@@ -55,6 +56,7 @@ label {
 }
 
 input,
+select,
 button {
   margin-top: 0.35rem;
   border-radius: 6px;
@@ -98,6 +100,14 @@ td {
   text-align: left;
 }
 
+a {
+  color: var(--primary);
+}
+
+:root.dark a {
+  color: var(--link);
+}
+
 .summary {
   color: var(--muted);
   margin-top: 0.5rem;
@@ -109,10 +119,18 @@ td {
 }
 
 .spinner {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.75rem;
+}
+
+.spinner.is-visible {
+  display: flex;
+}
+
+.spinner[hidden] {
+  display: none !important;
 }
 
 .spinner::before {
